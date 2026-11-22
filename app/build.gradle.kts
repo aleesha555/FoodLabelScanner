@@ -5,11 +5,8 @@ plugins {
 
 android {
     namespace = "uk.ac.tees.mad.s3616168"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 37
+
 
     defaultConfig {
         applicationId = "uk.ac.tees.mad.s3616168"
@@ -53,5 +50,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation("androidx.navigation:navigation-compose:2.10.2")
+    implementation("androidx.navigation:navigation-compose:2.8.5")
 }
