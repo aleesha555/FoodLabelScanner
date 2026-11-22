@@ -19,12 +19,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FoodLabelScannerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                AppNavigation()
             }
         }
     }
