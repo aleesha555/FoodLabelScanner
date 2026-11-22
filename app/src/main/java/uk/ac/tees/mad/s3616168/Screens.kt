@@ -3,8 +3,13 @@ package uk.ac.tees.mad.s3616168
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -20,6 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import java.util.Locale
 
 @Composable
 fun SplashScreen(onFinished: () -> Unit) {
@@ -54,19 +62,74 @@ fun ScanScreen(onLookup: (String) -> Unit, onHistory: () -> Unit) {
 }
 
 @Composable
-fun DetailScreen(barcode: String, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+fun DetailScreen(
+    barcode: String,
+    onBack: () -> Unit,
+    viewModel: ProductViewModel = viewModel()
+) {
+    LaunchedEffect(barcode) { viewModel.load(barcode) }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         Text("Product details", style = MaterialTheme.typography.headlineMedium)
         Text("Barcode: $barcode")
+
+        when (val s = viewModel.state) {
+            is DetailState.Success -> ProductInfo(s.product)
+            else -> Text("Loading...")
+        }
+
         Button(onClick = onBack) { Text("Back") }
     }
 }
+@Composable
+fun ProductInfo(product: ProductDto) {
+    val imageUrl = product.imageUrl
+    if (imageUrl != null) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = product.name,
+            modifier = Modifier.fillMaxWidth().height(200.dp)
+        )
+    }
+    Text(product.name ?: "Unnamed product", style = MaterialTheme.typography.headlineSmall)
+    product.brands?.let { Text(it) }
+    product.nutriScore?.let { Text("Nutri-Score: ${it.uppercase()}") }
+
+    Text("Nutrition per 100 g", style = MaterialTheme.typography.titleMedium)
+    val n = product.nutriments
+    NutritionRow("Energy", n?.energyKcal, "kcal")
+    NutritionRow("Fat", n?.fat, "g")
+    NutritionRow("Sugars", n?.sugars, "g")
+    NutritionRow("Salt", n?.salt, "g")
+    NutritionRow("Protein", n?.proteins, "g")
+
+    val allergens = product.allergens.orEmpty()
+    if (allergens.isNotEmpty()) {
+        Text("Allergens", style = MaterialTheme.typography.titleMedium)
+        Text(allergens.joinToString(", ") { it.substringAfter(":") })
+    }
+
+    product.ingredients?.let {
+        Text("Ingredients", style = MaterialTheme.typography.titleMedium)
+        Text(it)
+    }
+
+    Text(
+        "Data: Open Food Facts. Information may be incomplete.",
+        style = MaterialTheme.typography.bodySmall
+    )
+}
 
 @Composable
-fun HistoryScreen(onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("History", style = MaterialTheme.typography.headlineMedium)
-        Text("Your scanned products will appear here.")
-        Button(onClick = onBack) { Text("Back") }
+fun NutritionRow(label: String, value: Double?, unit: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label)
+        Text(if (value == null) "-" else String.format(Locale.UK, "%.1f %s", value, unit))
     }
 }
